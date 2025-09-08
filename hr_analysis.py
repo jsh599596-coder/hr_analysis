@@ -5,12 +5,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 #import matplotlib.font_manager as fm
 
-# NanumGothic 폰트 경로를 직접 지정
-# font_path = "C:/Windows/Fonts/NanumGothic.ttf"
-# fontprop = fm.FontProperties(fname=font_path)
-# plt.rcParams["font.family"] = "NanumGothic"
-# plt.rcParams["axes.unicode_minus"] = False
-
 # 한글 폰트 설정
 plt.rcParams['font.family'] = "NanumGothic"
 plt.rcParams['axes.unicode_minus'] = False
@@ -46,19 +40,33 @@ k2.metric("퇴직자 수", f"{quit_n:,}명")
 k3.metric("유지율", f"{stay_rate:.1f}%")
 k4.metric("퇴직율", f"{quit_rate:.1f}%")
 
-# 3) 그래프 1: 부서별 퇴직율
-if "부서" in df.columns:
-    dept = (df.groupby("부서")["퇴직"].mean().sort_values(ascending=False)*100)
-    st.subheader("부서별 퇴직율")
-    fig1, ax1 = plt.subplots(figsize=(7.5,3.8))
-    sns.barplot(x=dept.index, y=dept.values, ax=ax1)
-    ax1.set_ylabel("퇴직율(%)"); 
-    ax1.bar_label(ax1.containers[0], fmt="%.1f")
-    plt.xticks(rotation=15); 
-    st.pyplot(fig1)
 
+
+dist_home = df["집과의거리"].mean()
+satis=df["업무환경만족도"].mean()
+av_age=df["나이"].mean()
+
+l1,l2, = st.columns(2) 
+with l1:  
+    l1.metric("평균 귀가 거리:train:", f"{dist_home:.2f} km")
+
+with l2:
+    l2.metric("평균 업무 만족도는?",f"{satis:2f}/5")
+    if st.button("지금 우리는", key="satis_btn"):
+        st.info("ㅠㅠ")
+
+
+
+# 3) 그래프 1: 부서별 평균 근속연수
+if "부서" in df.columns:
+    dept_avg_years = df.groupby('부서')['근속연수'].mean()
+    st.subheader("부서별 평균 근속연수")
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.pie(dept_avg_years, labels=[f'{label}: {value:.1f}' for label, value in dept_avg_years.items()])
+    ax.set_title('부서별 평균 근속연수')
+    st.pyplot(fig)
 # 4) 그래프 2/3를 두 칼럼으로
-c1, c2 = st.columns(2)
+c1, c2, c3 = st.columns(3)
 
 # (좌) 급여인상율과 퇴직율 (정수%로 라운딩 후 라인)
 if "급여증가분백분율" in df.columns:
@@ -85,3 +93,16 @@ if col_name in df.columns:
         ax3.set_ylabel("퇴직율(%)"); 
         ax3.bar_label(ax3.containers[0], fmt="%.1f")
         st.pyplot(fig3)
+
+if "업무환경만족도" in df.columns:
+    satisfaction = df.groupby('부서')['업무환경만족도'].mean().sort_values(ascending=False)
+    with c3:
+        st.subheader("부서 별 만족도:smile:")
+        fig, ax = plt.subplots(figsize=(4, 3))
+        sns.barplot(x=satisfaction.index, y=satisfaction.values, ax=ax)
+        ax.set_title('부서별 업무 환경 만족도 평균')
+        ax.set_xlabel('부서')
+        ax.set_ylabel('업무 환경 만족도 평균')
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        st.pyplot(fig)
